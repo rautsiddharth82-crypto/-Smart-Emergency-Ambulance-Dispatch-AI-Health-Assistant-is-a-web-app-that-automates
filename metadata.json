@@ -1,0 +1,8 @@
+{
+  "name": "SwiftRescue: Automated Ambulance Dispatch",
+  "description": "A real-time automated ambulance dispatch system prototype using GPS location and intelligent routing.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}

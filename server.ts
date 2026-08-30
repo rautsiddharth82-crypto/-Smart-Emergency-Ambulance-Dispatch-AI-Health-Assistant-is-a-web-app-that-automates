@@ -4,6 +4,13 @@ import { Server } from "socket.io";
 import Database from "better-sqlite3";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import dotenv from "dotenv";
+import Groq from "groq-sdk";
+
+dotenv.config();
+dotenv.config({ path: ".env.local" });
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
 const app = express();
 const httpServer = createServer(app);
@@ -228,6 +235,33 @@ app.get("/api/consultations/pending", (req, res) => {
 app.get("/api/consultations/:id/messages", (req, res) => {
   const messages = db.prepare("SELECT * FROM live_messages WHERE consultation_id = ? ORDER BY timestamp ASC").all(req.params.id);
   res.json(messages);
+});
+
+// Groq Chat AI Endpoint
+app.post("/api/groq/chat", async (req, res) => {
+  try {
+    const { prompt, messages, model } = req.body;
+    const chatMessages = messages || [{ role: "user", content: prompt }];
+    const selectedModel = model || "openai/gpt-oss-120b";
+
+    const completion = await groq.chat.completions.create({
+      messages: chatMessages,
+      model: selectedModel,
+    });
+    res.json({ success: true, response: completion.choices[0]?.message?.content });
+  } catch (error: any) {
+    console.error("Groq Backend Error:", error);
+    try {
+      // Fallback model if requested model has quota/access issues
+      const fallbackCompletion = await groq.chat.completions.create({
+        messages: req.body.messages || [{ role: "user", content: req.body.prompt }],
+        model: "openai/gpt-oss-20b",
+      });
+      res.json({ success: true, response: fallbackCompletion.choices[0]?.message?.content });
+    } catch (fallbackError: any) {
+      res.status(500).json({ error: "Failed to fetch response from Groq", details: error?.message });
+    }
+  }
 });
 
 // Helper: Geocode pincode (Mocking for prototype, but using a real structure)

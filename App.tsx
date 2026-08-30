@@ -425,14 +425,14 @@ const DoctorAnimation = ({ isSpeaking }: { isSpeaking: boolean }) => {
 
 const Header = ({ currentView, setView }: { currentView: View, setView: (v: View) => void }) => (
   <header className="fixed top-0 left-0 right-0 z-[1000] glass border-b border-white/20 neo-shadow">
-    <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <div className="flex items-center gap-3 group cursor-pointer">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+      <div className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer" onClick={() => setView('patient')}>
         <div className="bg-gradient-to-br from-red-500 to-red-700 p-2 rounded-xl shadow-lg shadow-red-200 group-hover:scale-110 transition-transform">
-          <Activity className="w-6 h-6 text-white" />
+          <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </div>
         <div className="flex flex-col">
-          <span className="font-black text-zinc-900 tracking-tight text-lg leading-none">SwiftRescue</span>
-          <span className="text-[10px] font-bold text-red-600 uppercase tracking-[0.2em] mt-1">Protocol v1.1</span>
+          <span className="font-black text-zinc-900 tracking-tight text-base sm:text-lg leading-none">SwiftRescue</span>
+          <span className="text-[9px] sm:text-[10px] font-bold text-red-600 uppercase tracking-[0.2em] mt-0.5 sm:mt-1">Emergency Protocol</span>
         </div>
       </div>
       <nav className="hidden md:flex bg-zinc-100/50 backdrop-blur-sm p-1.5 rounded-2xl border border-zinc-200/50">
@@ -451,10 +451,17 @@ const Header = ({ currentView, setView }: { currentView: View, setView: (v: View
           </button>
         ))}
       </nav>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <a 
+          href="tel:112"
+          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md shadow-red-200 transition-all active:scale-95"
+        >
+          <Phone className="w-3.5 h-3.5" />
+          <span>112 SOS</span>
+        </a>
         <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-bold text-emerald-700 uppercase">System Live</span>
+          <span className="text-[10px] font-bold text-emerald-700 uppercase">Live</span>
         </div>
       </div>
     </div>
@@ -839,32 +846,35 @@ AYURVEDIC & HEALTH ANALYSIS:
   }, [socket]);
 
   return (
-    <div className="max-w-5xl mx-auto pt-28 px-6 space-y-8">
+    <div className="max-w-5xl mx-auto pt-20 sm:pt-24 px-3 sm:px-6 space-y-6 sm:space-y-8">
       {/* Welcome Banner */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-[2.5rem] p-8 text-white neo-shadow"
+        className="relative overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-8 text-white neo-shadow"
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-500/10 rounded-full blur-3xl -ml-24 -mb-24" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-black tracking-tight">Welcome to SwiftRescue</h1>
-            <p className="text-zinc-400 text-sm font-medium max-w-md">Your intelligent health companion for emergencies, consultations, and diagnostics.</p>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+          <div className="space-y-1.5 sm:space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Welcome to SwiftRescue</h1>
+            <p className="text-zinc-400 text-xs sm:text-sm font-medium max-w-md">Your intelligent health companion for emergencies, consultations, and diagnostics.</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Active Status</p>
-              <p className="text-emerald-400 font-black text-sm">System Online</p>
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/10 flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <div>
+                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">System</p>
+                <p className="text-emerald-400 font-black text-xs">Online</p>
+              </div>
             </div>
           </div>
         </div>
       </motion.div>
 
-      <div className="grid lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-7 space-y-8">
-          <div className="bg-white rounded-[2.5rem] p-10 neo-shadow border border-zinc-100 flex flex-col justify-center items-center text-center relative overflow-hidden">
+      <div className="grid lg:grid-cols-12 gap-6 sm:gap-8">
+        <div className="lg:col-span-7 space-y-6 sm:space-y-8">
+          <div className="bg-white rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 neo-shadow border border-zinc-100 flex flex-col justify-center items-center text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-amber-500 to-red-500" />
             <AnimatePresence mode="wait">
               {status === 'idle' && (
@@ -872,9 +882,9 @@ AYURVEDIC & HEALTH ANALYSIS:
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="space-y-10 w-full"
+                  className="space-y-6 sm:space-y-10 w-full py-2 sm:py-4"
                 >
-                  <div className="relative mx-auto w-56 h-56">
+                  <div className="relative mx-auto w-48 h-48 sm:w-56 sm:h-56">
                      <motion.div 
                       animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.1, 0.3] }}
                       transition={{ duration: 3, repeat: Infinity }}
@@ -887,16 +897,16 @@ AYURVEDIC & HEALTH ANALYSIS:
                      />
                      <button
                       onClick={handleSOS}
-                      className="absolute inset-4 bg-gradient-to-br from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-full shadow-[0_20px_50px_rgba(239,68,68,0.4)] transition-all active:scale-95 flex flex-col items-center justify-center gap-2 z-10 border-4 border-white/20"
+                      className="absolute inset-3 sm:inset-4 bg-gradient-to-br from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-full shadow-[0_20px_50px_rgba(239,68,68,0.4)] transition-all active:scale-90 flex flex-col items-center justify-center gap-1.5 sm:gap-2 z-10 border-4 border-white/20 touch-manipulation"
                     >
-                      <Bell className="w-14 h-14 animate-bounce" />
-                      <span className="text-4xl font-black tracking-tighter">SOS</span>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-70">Emergency</span>
+                      <Bell className="w-10 h-10 sm:w-14 sm:h-14 animate-bounce" />
+                      <span className="text-3xl sm:text-4xl font-black tracking-tighter">SOS</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.3em] opacity-70">Emergency</span>
                     </button>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Emergency Assistance</h2>
-                    <p className="text-zinc-500 mt-3 text-sm max-w-xs mx-auto leading-relaxed">Press the SOS button to dispatch the nearest ambulance to your location instantly.</p>
+                    <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">Emergency Assistance</h2>
+                    <p className="text-zinc-500 mt-2 sm:mt-3 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed">Press the SOS button to dispatch the nearest ambulance to your location instantly.</p>
                   </div>
                 </motion.div>
               )}
@@ -1234,14 +1244,14 @@ AYURVEDIC & HEALTH ANALYSIS:
       </div>
 
       {/* Ayurvedic Chatbot Section */}
-      <div className="fixed bottom-24 right-6 z-[1000]">
+      <div className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 z-[1000]">
         <AnimatePresence>
           {isChatOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-80 md:w-96 h-[600px] rounded-[2.5rem] shadow-2xl border border-zinc-100 flex flex-col overflow-hidden mb-4 neo-shadow"
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-x-3 bottom-20 sm:inset-auto sm:right-6 sm:bottom-24 w-auto sm:w-96 h-[78vh] sm:h-[600px] max-h-[620px] bg-white rounded-3xl sm:rounded-[2.5rem] shadow-2xl border border-zinc-100 flex flex-col overflow-hidden mb-2 sm:mb-4 neo-shadow z-[1001]"
             >
               <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-6 text-white flex items-center justify-between relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16" />
@@ -1516,9 +1526,14 @@ AYURVEDIC & HEALTH ANALYSIS:
         </AnimatePresence>
 
         <button
-          onClick={() => setIsChatOpen(!isChatOpen)}
+          onClick={() => {
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              navigator.vibrate(20);
+            }
+            setIsChatOpen(!isChatOpen);
+          }}
           className={cn(
-            "w-16 h-16 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] flex items-center justify-center transition-all active:scale-90 group relative overflow-hidden",
+            "w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all active:scale-90 group relative overflow-hidden touch-manipulation",
             isChatOpen ? "bg-zinc-900 text-white" : "bg-emerald-600 text-white"
           )}
         >
@@ -1694,27 +1709,27 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto pt-24 px-4 pb-12 space-y-8">
+    <div className="max-w-7xl mx-auto pt-20 sm:pt-24 px-3 sm:px-4 pb-12 space-y-6 sm:space-y-8">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm">
-          <p className="text-zinc-500 text-sm font-medium">Active Ambulances</p>
-          <p className="text-3xl font-bold text-zinc-900 mt-1">{ambulances.length}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs sm:text-sm font-medium">Active Ambulances</p>
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1">{ambulances.length}</p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm">
-          <p className="text-zinc-500 text-sm font-medium">Available Units</p>
-          <p className="text-3xl font-bold text-emerald-600 mt-1">
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs sm:text-sm font-medium">Available Units</p>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mt-1">
             {ambulances.filter(a => a.status === 'available').length}
           </p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm">
-          <p className="text-zinc-500 text-sm font-medium">Total Requests</p>
-          <p className="text-3xl font-bold text-red-600 mt-1">{requests.length}</p>
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs sm:text-sm font-medium">Total Requests</p>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600 mt-1">{requests.length}</p>
         </div>
       </div>
 
       {/* Map Section */}
-      <div className="bg-white rounded-3xl border border-zinc-100 shadow-xl overflow-hidden h-[500px] relative">
+      <div className="bg-white rounded-3xl border border-zinc-100 shadow-xl overflow-hidden h-[340px] sm:h-[450px] md:h-[500px] relative">
         <MapContainer 
           center={[12.9716, 77.5946]} 
           zoom={5} 
@@ -1742,20 +1757,20 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
             </Marker>
           ))}
         </MapContainer>
-        <div className="absolute top-4 right-4 z-[1000] flex gap-2">
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] flex flex-wrap gap-2">
           <button 
             onClick={handleDeployTollUnits}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 hover:bg-emerald-700 transition-all"
+            className="bg-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 hover:bg-emerald-700 transition-all active:scale-95"
           >
-            <MapIcon className="w-4 h-4" />
-            Deploy Toll Units
+            <MapIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Toll Units</span>
           </button>
           <button 
             onClick={() => setIsAdding(true)}
-            className="bg-zinc-900 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 hover:bg-zinc-800 transition-all"
+            className="bg-zinc-900 text-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 hover:bg-zinc-800 transition-all active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            Add Ambulance
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Add Unit</span>
           </button>
         </div>
       </div>
@@ -1974,9 +1989,9 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pt-24 px-4 pb-12 grid md:grid-cols-3 gap-8">
+    <div className="max-w-4xl mx-auto pt-20 sm:pt-24 px-3 sm:px-4 pb-12 grid md:grid-cols-3 gap-6 sm:gap-8">
       <div className="md:col-span-1 space-y-6">
-        <div className="bg-white rounded-3xl p-6 shadow-xl border border-zinc-100">
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xl border border-zinc-100">
           <h2 className="font-bold text-zinc-900 mb-4 flex items-center gap-2">
             <User className="w-5 h-5 text-emerald-600" />
             Pending Requests
@@ -1994,7 +2009,7 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
                   </div>
                   <button 
                     onClick={() => acceptConsultation(c)}
-                    className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all"
+                    className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all active:scale-95"
                   >
                     Accept
                   </button>
@@ -2010,7 +2025,7 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
 
       <div className="md:col-span-2">
         {activeConsultation ? (
-          <div className="bg-white rounded-3xl shadow-xl border border-zinc-100 h-[600px] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-xl border border-zinc-100 h-[480px] sm:h-[600px] flex flex-col overflow-hidden">
             <div className="bg-zinc-900 p-4 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/10 p-2 rounded-xl">
@@ -2077,6 +2092,59 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
   );
 };
 
+// --- Mobile Bottom Navigation ---
+const MobileBottomNav = ({ currentView, setView }: { currentView: View, setView: (v: View) => void }) => {
+  const tabs = [
+    { id: 'patient' as View, label: 'Emergency', icon: AlertCircle, color: 'text-red-600', badge: 'SOS' },
+    { id: 'doctor' as View, label: 'Doctors', icon: MessageSquare, color: 'text-blue-600' },
+    { id: 'ambulance' as View, label: 'Ambulance', icon: Truck, color: 'text-amber-600' },
+    { id: 'admin' as View, label: 'Command', icon: Shield, color: 'text-indigo-600' },
+  ];
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[1000] glass border-t border-zinc-200/80 mobile-bottom-nav shadow-2xl backdrop-blur-xl">
+      <div className="grid grid-cols-4 items-center px-2 py-1.5 gap-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = currentView === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                  navigator.vibrate(20);
+                }
+                setView(tab.id);
+              }}
+              className={cn(
+                "flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all relative select-none",
+                isActive 
+                  ? "bg-zinc-900 text-white shadow-md scale-[1.02]" 
+                  : "text-zinc-500 hover:text-zinc-900 active:scale-95 hover:bg-zinc-100/50"
+              )}
+            >
+              <div className="relative">
+                <Icon className={cn("w-5 h-5 transition-transform", isActive ? "text-white scale-110" : tab.color)} />
+                {tab.badge && !isActive && (
+                  <span className="absolute -top-1.5 -right-3 bg-red-600 text-white text-[7px] font-black px-1 py-0.2 rounded-full animate-pulse shadow-sm">
+                    {tab.badge}
+                  </span>
+                )}
+              </div>
+              <span className={cn(
+                "text-[10px] font-semibold mt-1 tracking-tight leading-tight",
+                isActive ? "text-white font-bold" : "text-zinc-600"
+              )}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
 // --- Main App ---
 export default function App() {
   const [view, setView] = useState<View>('patient');
@@ -2091,10 +2159,10 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-red-100 selection:text-red-900">
+    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-red-100 selection:text-red-900 pb-20 md:pb-0">
       <Header currentView={view} setView={setView} />
       
-      <main className="pb-20">
+      <main className="pb-24 md:pb-20">
         <AnimatePresence mode="wait">
           {view === 'patient' && <PatientView key="patient" socket={socket} />}
           {view === 'ambulance' && <AmbulanceView key="ambulance" socket={socket} />}
@@ -2103,8 +2171,11 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* Footer Branding */}
-      <footer className="fixed bottom-0 left-0 right-0 p-4 text-center pointer-events-none z-[1000]">
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav currentView={view} setView={setView} />
+
+      {/* Desktop Footer Branding */}
+      <footer className="hidden md:block fixed bottom-0 left-0 right-0 p-4 text-center pointer-events-none z-[1000]">
         <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-[0.2em]">
           SwiftRescue Protocol v1.1.0 • Prototype System
         </p>

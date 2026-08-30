@@ -29,7 +29,8 @@ import {
   Volume2,
   VolumeX,
   Target,
-  Phone
+  Phone,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -38,6 +39,7 @@ import L from 'leaflet';
 import { GoogleGenAI } from "@google/genai";
 import LandingPage, { UserAccount } from './LandingPage';
 import AuthModal from './AuthModal';
+import AppointmentModal, { Appointment, Doctor } from './AppointmentModal';
 
 // Groq & Gemini API Key Configuration
 export function getActiveApiKey(): string {
@@ -559,13 +561,31 @@ const PatientView = ({ socket }: { socket: any, key?: string }) => {
   const [assignedDoctor, setAssignedDoctor] = useState<any>(null);
   const [selectedLanguage, setSelectedLanguage] = useState(INDIAN_LANGUAGES[0]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'doctors' | 'labs' | 'ambulances'>('doctors');
+  const [activeTab, setActiveTab] = useState<'doctors' | 'appointments' | 'labs' | 'ambulances'>('doctors');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [selectedDocForBooking, setSelectedDocForBooking] = useState<Doctor | null>(null);
   const [nearbyAmbulances, setNearbyAmbulances] = useState<Ambulance[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const res = await fetch('/api/appointments');
+        if (res.ok) {
+          const data = await res.json();
+          setAppointments(data);
+        }
+      } catch (e) {
+        console.warn('Appointments fetch error:', e);
+      }
+    };
+    fetchAppointments();
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -1128,50 +1148,75 @@ Based on your symptoms:
             </AnimatePresence>
           </div>
 
-          {/* Tabs for Doctors and Labs */}
-          <div className="bg-white rounded-[2.5rem] p-8 neo-shadow border border-zinc-100">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex bg-zinc-100/80 backdrop-blur-sm p-1.5 rounded-2xl border border-zinc-200/50">
+          {/* Tabs for Doctors, Appointments, and Labs */}
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 neo-shadow border border-zinc-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <div className="flex flex-wrap bg-zinc-100/80 backdrop-blur-sm p-1 rounded-2xl border border-zinc-200/50">
                 <button
                   onClick={() => setActiveTab('doctors')}
                   className={cn(
-                    "px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 tracking-wide",
+                    "px-4 sm:px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 tracking-wide",
                     activeTab === 'doctors' 
                       ? "bg-white text-emerald-600 shadow-md ring-1 ring-zinc-200/50" 
                       : "text-zinc-500 hover:text-zinc-900"
                   )}
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-3.5 h-3.5" />
                   DOCTORS
+                </button>
+                <button
+                  onClick={() => setActiveTab('appointments')}
+                  className={cn(
+                    "px-4 sm:px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 tracking-wide",
+                    activeTab === 'appointments' 
+                      ? "bg-white text-blue-600 shadow-md ring-1 ring-zinc-200/50" 
+                      : "text-zinc-500 hover:text-zinc-900"
+                  )}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  APPOINTMENTS
+                  {appointments.length > 0 && (
+                    <span className="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.2 rounded-full ml-0.5">
+                      {appointments.length}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab('labs')}
                   className={cn(
-                    "px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 tracking-wide",
+                    "px-4 sm:px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 tracking-wide",
                     activeTab === 'labs' 
                       ? "bg-white text-emerald-600 shadow-md ring-1 ring-zinc-200/50" 
                       : "text-zinc-500 hover:text-zinc-900"
                   )}
                 >
-                  <Activity className="w-4 h-4" />
+                  <Activity className="w-3.5 h-3.5" />
                   LABS
                 </button>
                 <button
                   onClick={() => setActiveTab('ambulances')}
                   className={cn(
-                    "px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 tracking-wide",
+                    "px-4 sm:px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 tracking-wide",
                     activeTab === 'ambulances' 
                       ? "bg-white text-emerald-600 shadow-md ring-1 ring-zinc-200/50" 
                       : "text-zinc-500 hover:text-zinc-900"
                   )}
                 >
-                  <Truck className="w-4 h-4" />
+                  <Truck className="w-3.5 h-3.5" />
                   FLEET
                 </button>
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Demo Mode</span>
-                <span className="text-[8px] font-bold text-emerald-500 uppercase mt-1">Live Directory</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedDocForBooking(DUMMY_DOCTORS[0]);
+                    setIsAppointmentModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Book Visit</span>
+                </button>
               </div>
             </div>
 
@@ -1183,8 +1228,8 @@ Based on your symptoms:
                     key={doc.id} 
                     className="group p-5 bg-zinc-50 rounded-3xl border border-zinc-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all cursor-pointer neo-shadow"
                   >
-                    <div className="flex gap-5">
-                      <div className="relative">
+                    <div className="flex flex-col sm:flex-row gap-5">
+                      <div className="relative flex-shrink-0">
                         <img 
                           src={doc.image} 
                           alt={doc.name} 
@@ -1231,18 +1276,92 @@ Based on your symptoms:
                         </div>
                       </div>
                     </div>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsRequestingAppointment(true);
-                        setAppointmentReason(`Consultation request for ${doc.name} (${doc.domain})`);
-                      }}
-                      className="w-full mt-5 py-3 bg-white border-2 border-zinc-100 rounded-2xl text-xs font-black text-zinc-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm active:scale-95"
-                    >
-                      BOOK CONSULTATION
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 mt-5">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDocForBooking(doc);
+                          setIsAppointmentModalOpen(true);
+                        }}
+                        className="py-2.5 bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-blue-700 transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>BOOK APPOINTMENT</span>
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsRequestingAppointment(true);
+                          setAppointmentReason(`Consultation request for ${doc.name} (${doc.domain})`);
+                        }}
+                        className="py-2.5 bg-white border-2 border-zinc-200 rounded-2xl text-xs font-black text-zinc-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>LIVE CHAT</span>
+                      </button>
+                    </div>
                   </motion.div>
                 ))
+              ) : activeTab === 'appointments' ? (
+                appointments.length === 0 ? (
+                  <div className="text-center py-12 bg-zinc-50 rounded-3xl border border-zinc-100 p-6 space-y-3">
+                    <Calendar className="w-12 h-12 text-zinc-300 mx-auto" />
+                    <p className="font-bold text-zinc-800 text-sm">No Scheduled Appointments</p>
+                    <p className="text-xs text-zinc-400 max-w-xs mx-auto">Book an appointment with a medical specialist to see your scheduled visits here.</p>
+                    <button
+                      onClick={() => {
+                        setSelectedDocForBooking(DUMMY_DOCTORS[0]);
+                        setIsAppointmentModalOpen(true);
+                      }}
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
+                    >
+                      Book Your First Appointment
+                    </button>
+                  </div>
+                ) : (
+                  appointments.map((apt) => (
+                    <motion.div
+                      key={apt.id}
+                      whileHover={{ y: -2 }}
+                      className="p-5 bg-zinc-50 rounded-3xl border border-zinc-100 hover:border-blue-200 transition-all space-y-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-black text-zinc-900 text-base">{apt.doctor_name}</h4>
+                            <span className={cn(
+                              "text-[8px] font-black px-2 py-0.5 rounded-md uppercase",
+                              apt.status === 'confirmed' ? "bg-emerald-100 text-emerald-700" :
+                              apt.status === 'completed' ? "bg-blue-100 text-blue-700" :
+                              "bg-zinc-100 text-zinc-500"
+                            )}>
+                              {apt.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-1">Patient: <span className="font-bold text-zinc-700">{apt.patient_name}</span> {apt.patient_phone && `• ${apt.patient_phone}`}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono text-[10px] bg-white px-2 py-1 rounded-lg border border-zinc-200 text-zinc-500">{apt.id}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-2xl border border-zinc-100 text-xs">
+                        <div className="flex items-center gap-2 text-zinc-600">
+                          <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                          <span>{apt.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-600">
+                          <Clock className="w-3.5 h-3.5 text-blue-500" />
+                          <span>{apt.time_slot}</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/80 p-2.5 rounded-xl text-xs text-zinc-600 italic">
+                        "{apt.reason}"
+                      </div>
+                    </motion.div>
+                  ))
+                )
               ) : activeTab === 'labs' ? (
                 DUMMY_LABS.map(lab => (
                   <motion.div 
@@ -1590,18 +1709,33 @@ Based on your symptoms:
                 </div>
                 <button 
                   type="button"
-                  onClick={() => setIsRequestingAppointment(true)}
-                  className="w-full bg-zinc-900 text-white py-2 rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setSelectedDocForBooking(DUMMY_DOCTORS[0]);
+                    setIsAppointmentModalOpen(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-xl text-xs font-bold hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  Book Live Appointment
+                  <Calendar className="w-4 h-4" />
+                  Schedule Doctor Appointment
                 </button>
               </form>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Appointment Request Form Modal */}
+        {/* Dedicated Doctor Appointment Scheduling Modal */}
+        <AppointmentModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => setIsAppointmentModalOpen(false)}
+          doctors={DUMMY_DOCTORS}
+          selectedDoctor={selectedDocForBooking}
+          onBookingSuccess={(newApt) => {
+            setAppointments(prev => [newApt, ...prev]);
+            setActiveTab('appointments');
+          }}
+        />
+
+        {/* Live Consultation Chat Modal */}
         <AnimatePresence>
           {isRequestingAppointment && (
             <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
@@ -1828,16 +1962,19 @@ const AmbulanceView = ({ socket }: { socket: any, key?: string }) => {
 const AdminView = ({ socket }: { socket: any, key?: string }) => {
   const [ambulances, setAmbulances] = useState<Ambulance[]>([]);
   const [requests, setRequests] = useState<EmergencyRequest[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newAmb, setNewAmb] = useState({ id: '', name: '', pincode: '' });
 
   const fetchData = useCallback(async () => {
-    const [ambRes, reqRes] = await Promise.all([
+    const [ambRes, reqRes, aptRes] = await Promise.all([
       fetch('/api/ambulances'),
-      fetch('/api/requests')
+      fetch('/api/requests'),
+      fetch('/api/appointments')
     ]);
-    setAmbulances(await ambRes.json());
-    setRequests(await reqRes.json());
+    if (ambRes.ok) setAmbulances(await ambRes.json());
+    if (reqRes.ok) setRequests(await reqRes.json());
+    if (aptRes.ok) setAppointments(await aptRes.json());
   }, []);
 
   useEffect(() => {
@@ -1846,10 +1983,12 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
     socket.on('ambulance_updated', fetchData);
     socket.on('request_assigned', fetchData);
     socket.on('request_queued', fetchData);
+    socket.on('new_appointment', fetchData);
     return () => {
       socket.off('ambulance_updated');
       socket.off('request_assigned');
       socket.off('request_queued');
+      socket.off('new_appointment');
     };
   }, [socket, fetchData]);
 
@@ -1887,20 +2026,24 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
   return (
     <div className="max-w-7xl mx-auto pt-20 sm:pt-24 px-3 sm:px-4 pb-12 space-y-6 sm:space-y-8">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
-          <p className="text-zinc-500 text-xs sm:text-sm font-medium">Active Ambulances</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs font-medium">Active Fleet</p>
           <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1">{ambulances.length}</p>
         </div>
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
-          <p className="text-zinc-500 text-xs sm:text-sm font-medium">Available Units</p>
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs font-medium">Available Units</p>
           <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mt-1">
             {ambulances.filter(a => a.status === 'available').length}
           </p>
         </div>
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
-          <p className="text-zinc-500 text-xs sm:text-sm font-medium">Total Requests</p>
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs font-medium">Emergency Calls</p>
           <p className="text-2xl sm:text-3xl font-bold text-red-600 mt-1">{requests.length}</p>
+        </div>
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-zinc-100 shadow-sm">
+          <p className="text-zinc-500 text-xs font-medium">Doctor Bookings</p>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-1">{appointments.length}</p>
         </div>
       </div>
 
@@ -1917,7 +2060,7 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
               <Popup>
                 <div className="p-2">
                   <p className="font-bold">{amb.name}</p>
-                  <p className="text-xs text-zinc-500 uppercase">{amb.status}</p>
+                  <p className="text-xs text-zinc-500">Status: {amb.status}</p>
                 </div>
               </Popup>
             </Marker>
@@ -1933,17 +2076,19 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
             </Marker>
           ))}
         </MapContainer>
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] flex flex-wrap gap-2">
+        
+        <div className="absolute top-4 right-4 z-[1000] flex gap-2">
           <button 
             onClick={handleDeployTollUnits}
-            className="bg-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 hover:bg-emerald-700 transition-all active:scale-95"
+            className="bg-zinc-900 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg hover:bg-zinc-800 transition-all flex items-center gap-1.5 sm:gap-2 active:scale-95"
           >
-            <MapIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Toll Units</span>
+            <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Deploy Toll Units</span>
+            <span className="sm:hidden">Tolls</span>
           </button>
           <button 
             onClick={() => setIsAdding(true)}
-            className="bg-zinc-900 text-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 hover:bg-zinc-800 transition-all active:scale-95"
+            className="bg-emerald-600 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center gap-1.5 sm:gap-2 active:scale-95"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Add Unit</span>
@@ -1987,45 +2132,91 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
           </div>
         </div>
 
-        {/* Recent Requests */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="font-bold text-zinc-900 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-zinc-400" />
-            Recent Emergency Requests
-          </h3>
-          <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 border-b border-zinc-100">
-                <tr>
-                  <th className="px-6 py-4 font-bold text-zinc-500">Patient</th>
-                  <th className="px-6 py-4 font-bold text-zinc-500">Status</th>
-                  <th className="px-6 py-4 font-bold text-zinc-500">Assigned</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {requests.map(req => (
-                  <tr key={req.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-zinc-400" />
-                        <span className="font-medium text-zinc-900">{req.patient_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "px-2 py-1 rounded-md text-[10px] font-bold uppercase",
-                        req.status === 'assigned' ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-                      )}>
-                        {req.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-zinc-600">
-                      {req.ambulance_id || '---'}
-                    </td>
+        {/* Recent Requests & Appointments */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-4">
+            <h3 className="font-bold text-zinc-900 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-zinc-400" />
+              Recent Emergency Requests
+            </h3>
+            <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-zinc-50 border-b border-zinc-100">
+                  <tr>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Patient</th>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Status</th>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Assigned</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {requests.map(req => (
+                    <tr key={req.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-zinc-400" />
+                          <span className="font-medium text-zinc-900">{req.patient_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={cn(
+                          "px-2 py-1 rounded-md text-[10px] font-bold uppercase",
+                          req.status === 'assigned' ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                        )}>
+                          {req.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-zinc-600">
+                        {req.ambulance_id || '---'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-bold text-zinc-900 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              Doctor Appointment Bookings
+            </h3>
+            <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-zinc-50 border-b border-zinc-100">
+                  <tr>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Patient</th>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Doctor</th>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Slot</th>
+                    <th className="px-6 py-4 font-bold text-zinc-500">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {appointments.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-6 text-center text-zinc-400 italic">No doctor appointments booked yet</td>
+                    </tr>
+                  ) : (
+                    appointments.slice(0, 5).map(apt => (
+                      <tr key={apt.id} className="hover:bg-zinc-50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-zinc-900">{apt.patient_name}</td>
+                        <td className="px-6 py-4 text-zinc-600">{apt.doctor_name}</td>
+                        <td className="px-6 py-4 text-zinc-600 text-xs">{apt.date} • {apt.time_slot}</td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "px-2 py-1 rounded-md text-[10px] font-bold uppercase",
+                            apt.status === 'confirmed' ? "bg-emerald-100 text-emerald-700" :
+                            apt.status === 'completed' ? "bg-blue-100 text-blue-700" :
+                            "bg-zinc-100 text-zinc-500"
+                          )}>
+                            {apt.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -2095,34 +2286,49 @@ const AdminView = ({ socket }: { socket: any, key?: string }) => {
 const DoctorView = ({ socket }: { socket: any, key?: string }) => {
   const [pendingConsultations, setPendingConsultations] = useState<any[]>([]);
   const [activeConsultation, setActiveConsultation] = useState<any>(null);
+  const [doctorAppointments, setDoctorAppointments] = useState<Appointment[]>([]);
+  const [leftTab, setLeftTab] = useState<'consultations' | 'appointments'>('consultations');
   const [messages, setMessages] = useState<any[]>([]);
   const [userInput, setUserInput] = useState('');
   const doctorId = "DR-001"; // Mock doctor ID
 
-  useEffect(() => {
-    const fetchPending = async () => {
-      try {
-        const res = await fetch('/api/consultations/pending');
-        if (res.ok) {
-          const data = await res.json();
-          // Map database fields to match socket event structure
-          setPendingConsultations(data.map((c: any) => ({
-            consultationId: c.id,
-            patient_id: c.patient_id,
-            patient_name: c.patient_name,
-            reason: c.reason
-          })));
-        }
-      } catch (err) {
-        console.error("Failed to fetch pending consultations:", err);
+  const fetchDoctorData = async () => {
+    try {
+      const [consultRes, aptRes] = await Promise.all([
+        fetch('/api/consultations/pending'),
+        fetch('/api/appointments')
+      ]);
+
+      if (consultRes.ok) {
+        const consultData = await consultRes.json();
+        setPendingConsultations(consultData.map((c: any) => ({
+          consultationId: c.id,
+          patient_id: c.patient_id,
+          patient_name: c.patient_name,
+          reason: c.reason
+        })));
       }
-    };
-    fetchPending();
+
+      if (aptRes.ok) {
+        const aptData = await aptRes.json();
+        setDoctorAppointments(aptData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch doctor data:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDoctorData();
 
     if (!socket) return;
 
     socket.on('consultation_requested', (data: any) => {
       setPendingConsultations(prev => [...prev, data]);
+    });
+
+    socket.on('new_appointment', (data: any) => {
+      setDoctorAppointments(prev => [data, ...prev]);
     });
 
     socket.on('consultation_started', (data: any) => {
@@ -2139,6 +2345,7 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
 
     return () => {
       socket.off('consultation_requested');
+      socket.off('new_appointment');
       socket.off('consultation_started');
       socket.off('new_live_message');
     };
@@ -2150,6 +2357,19 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
       consultationId: consultation.consultationId,
       doctor_id: doctorId
     });
+  };
+
+  const handleUpdateAptStatus = async (id: string, newStatus: 'confirmed' | 'completed' | 'cancelled') => {
+    try {
+      await fetch(`/api/appointments/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      setDoctorAppointments(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
   };
 
   const sendMessage = (e: React.FormEvent) => {
@@ -2168,33 +2388,120 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
     <div className="max-w-4xl mx-auto pt-20 sm:pt-24 px-3 sm:px-4 pb-12 grid md:grid-cols-3 gap-6 sm:gap-8">
       <div className="md:col-span-1 space-y-6">
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xl border border-zinc-100">
-          <h2 className="font-bold text-zinc-900 mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-emerald-600" />
-            Pending Requests
-          </h2>
+          <div className="flex bg-zinc-100 p-1 rounded-2xl border border-zinc-200/50 mb-4">
+            <button
+              onClick={() => setLeftTab('consultations')}
+              className={cn(
+                "flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                leftTab === 'consultations' ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-900"
+              )}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Live Queue</span>
+              {pendingConsultations.length > 0 && (
+                <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.2 rounded-full">
+                  {pendingConsultations.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setLeftTab('appointments')}
+              className={cn(
+                "flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                leftTab === 'appointments' ? "bg-white text-blue-600 shadow-sm" : "text-zinc-500 hover:text-zinc-900"
+              )}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Bookings</span>
+              {doctorAppointments.length > 0 && (
+                <span className="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.2 rounded-full">
+                  {doctorAppointments.length}
+                </span>
+              )}
+            </button>
+          </div>
+
           <div className="space-y-3">
-            {pendingConsultations.length === 0 && (
-              <p className="text-zinc-400 text-sm text-center py-8 italic">No pending requests</p>
-            )}
-            {pendingConsultations.map((c, i) => (
-              <div key={i} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-sm text-zinc-900">{c.patient_name}</p>
-                    <p className="text-[10px] text-zinc-500 uppercase">Awaiting Doctor</p>
+            {leftTab === 'consultations' ? (
+              pendingConsultations.length === 0 ? (
+                <p className="text-zinc-400 text-sm text-center py-8 italic">No pending live requests</p>
+              ) : (
+                pendingConsultations.map((c, i) => (
+                  <div key={i} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-sm text-zinc-900">{c.patient_name}</p>
+                        <p className="text-[10px] text-zinc-500 uppercase">Awaiting Doctor</p>
+                      </div>
+                      <button 
+                        onClick={() => acceptConsultation(c)}
+                        className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all active:scale-95"
+                      >
+                        Accept
+                      </button>
+                    </div>
+                    <div className="bg-white p-3 rounded-xl border border-zinc-100">
+                      <p className="text-xs text-zinc-600 italic">"{c.reason}"</p>
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => acceptConsultation(c)}
-                    className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all active:scale-95"
-                  >
-                    Accept
-                  </button>
-                </div>
-                <div className="bg-white p-3 rounded-xl border border-zinc-100">
-                  <p className="text-xs text-zinc-600 italic">"{c.reason}"</p>
-                </div>
-              </div>
-            ))}
+                ))
+              )
+            ) : (
+              doctorAppointments.length === 0 ? (
+                <p className="text-zinc-400 text-sm text-center py-8 italic">No scheduled appointments</p>
+              ) : (
+                doctorAppointments.map((apt) => (
+                  <div key={apt.id} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-sm text-zinc-900">{apt.patient_name}</p>
+                        <span className={cn(
+                          "text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md inline-block mt-0.5",
+                          apt.status === 'confirmed' ? "bg-emerald-100 text-emerald-700" :
+                          apt.status === 'completed' ? "bg-blue-100 text-blue-700" :
+                          "bg-zinc-100 text-zinc-500"
+                        )}>
+                          {apt.status}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[9px] text-zinc-400 bg-white px-1.5 py-0.5 rounded border border-zinc-200">{apt.id}</span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl border border-zinc-100 text-[11px] space-y-1 text-zinc-600">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 text-blue-500" />
+                        <span className="font-semibold text-zinc-800">{apt.date} • {apt.time_slot}</span>
+                      </div>
+                      {apt.patient_phone && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 text-zinc-400" />
+                          <span>{apt.patient_phone}</span>
+                        </div>
+                      )}
+                      <p className="italic text-zinc-500 pt-1">"{apt.reason}"</p>
+                    </div>
+
+                    {apt.status === 'confirmed' && (
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => handleUpdateAptStatus(apt.id, 'completed')}
+                          className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Complete</span>
+                        </button>
+                        <button
+                          onClick={() => handleUpdateAptStatus(apt.id, 'cancelled')}
+                          className="py-1.5 px-2 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-lg text-[10px] font-bold transition-all active:scale-95"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )
+            )}
           </div>
         </div>
       </div>

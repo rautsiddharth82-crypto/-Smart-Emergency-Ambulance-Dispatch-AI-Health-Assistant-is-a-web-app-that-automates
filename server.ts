@@ -77,6 +77,20 @@ db.exec(`
     role TEXT DEFAULT 'user', -- 'user', 'driver', 'admin', 'doctor'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS appointments (
+    id TEXT PRIMARY KEY,
+    patient_id TEXT,
+    patient_name TEXT,
+    patient_phone TEXT,
+    doctor_id TEXT,
+    doctor_name TEXT,
+    date TEXT,
+    time_slot TEXT,
+    reason TEXT,
+    status TEXT DEFAULT 'confirmed', -- 'confirmed', 'completed', 'cancelled'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration for existing tables
@@ -297,6 +311,62 @@ app.get("/api/consultations/pending", (req, res) => {
 app.get("/api/consultations/:id/messages", (req, res) => {
   const messages = db.prepare("SELECT * FROM live_messages WHERE consultation_id = ? ORDER BY timestamp ASC").all(req.params.id);
   res.json(messages);
+});
+
+// API Routes - Appointments
+app.post("/api/appointments", (req, res) => {
+  const { patient_id, patient_name, patient_phone, doctor_id, doctor_name, date, time_slot, reason } = req.body;
+  if (!patient_name || !doctor_id || !date || !time_slot) {
+    return res.status(400).json({ error: "Patient name, doctor, date, and time slot are required" });
+  }
+
+  const id = `APT-${Date.now()}`;
+  db.prepare(`
+    INSERT INTO appointments (id, patient_id, patient_name, patient_phone, doctor_id, doctor_name, date, time_slot, reason, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+  `).run(id, patient_id || "GUEST", patient_name, patient_phone || "", doctor_id, doctor_name || "Doctor", date, time_slot, reason || "General Checkup");
+
+  const newAppointment = db.prepare("SELECT * FROM appointments WHERE id = ?").get(id);
+  io.emit("new_appointment", newAppointment);
+  res.json({ success: true, appointment: newAppointment });
+});
+
+app.get("/api/appointments", (req, res) => {
+  const appointments = db.prepare("SELECT * FROM appointments ORDER BY created_at DESC").all();
+  res.json(appointments);
+});
+
+app.get("/api/appointments/doctor/:doctorId", (req, res) => {
+  const appointments = db.prepare("SELECT * FROM appointments WHERE doctor_id = ? ORDER BY date ASC, time_slot ASC").all(req.params.doctorId);
+  res.json(appointments);
+});
+
+app.get("/api/appointments/user/:patientId", (req, res) => {
+  const appointments = db.prepare("SELECT * FROM appointments WHERE patient_id = ? ORDER BY created_at DESC").all(req.params.patientId);
+  res.json(appointments);
+});
+
+app.patch("/api/appointments/:id/status", (req, res) => {
+  const { status } = req.body;
+  db.prepare("UPDATE appointments SET status = ? WHERE id = ?").run(status, req.params.id);
+  const updated = db.prepare("SELECT * FROM appointments WHERE id = ?").get(req.params.id);
+  io.emit("appointment_updated", updated);
+  res.json({ success: true, appointment: updated });
+});
+
+// OpenStreetMap Nominatim Geocoding Endpoint
+app.get("/api/geocode", async (req, res) => {
+  const { q, pincode } = req.query;
+  const queryParam = pincode ? `postalcode=${pincode}` : `q=${encodeURIComponent(String(q || 'Bangalore'))}`;
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${queryParam}&format=json&limit=1`, {
+      headers: { 'User-Agent': 'SwiftRescue-Platform' }
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to geocode query", details: err?.message });
+  }
 });
 
 // Groq Chat AI Endpoint

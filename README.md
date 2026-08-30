@@ -8,6 +8,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Groq](https://img.shields.io/badge/Groq_AI-F05A28?style=for-the-badge&logo=fastapi&logoColor=white)](https://groq.com/)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 
@@ -15,31 +16,51 @@
   <b>An automated, real-time emergency healthcare platform that bridges the gap between emergency ambulance dispatch, intelligent symptom triage, and instant medical consultations.</b>
 </p>
 
+🔗 **Live Production App**: **[https://swift-rescue-dispatch.vercel.app](https://swift-rescue-dispatch.vercel.app)**
+
 ---
 
 </div>
 
-## 🌟 Key Features
+## 🌟 Key Modules & Features
 
-### 1. 🚨 Automated Real-Time Ambulance Dispatch
+### 1. 🏠 Landing Page & Role-Based Access
+- **Modern Interactive Landing Page (`LandingPage.tsx`)**: Hero banner, live telemetry counters, feature showcase, 3-step workflow, and instant access portal.
+- **Role-Based Authentication**:
+  - **Citizen / Patient (`user`)**: Instant 1-click SOS GPS dispatch, Dr. Dost AI Ayurvedic health assistant, physician directory, and diagnostic lab booking.
+  - **Ambulance Driver (`driver`)**: Real-time vehicle GPS sync, incoming patient assignment alerts, and availability toggles (`Available`, `Busy`, `Offline`).
+  - **System Administrator (`admin`)**: Nationwide fleet command map, Overpass API highway toll plaza deployment, and dispatch request queue.
+  - **Medical Doctor (`doctor`)**: Live patient teleconsultation queue and bidirectional live chat.
+
+### 2. 🚨 Automated Real-Time Ambulance Dispatch
 - **1-Click SOS Trigger**: Automatically pinpoints patient GPS location and dispatches the nearest available emergency unit using the Haversine distance algorithm.
-- **Live Interactive Maps**: Real-time Leaflet map tracking of ambulances, patient coordinates, route paths, and dynamic status updates (`available`, `busy`, `offline`).
+- **Live Interactive Maps**: Real-time Leaflet map tracking of ambulances, patient coordinates, route paths, and dynamic status updates.
 - **Toll Plaza Integration**: Automated deployment of emergency ambulance units across highway toll plazas via OpenStreetMap Overpass API.
 
-### 2. 🤖 Dr. Dost — AI Health & Ayurvedic Assistant
-- **Dual AI Engine**: Powered by ultra-fast **Groq** (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`) and **Google Gemini** (`gemini-2.5-flash`).
+### 3. 🤖 Dr. Dost — AI Health & Ayurvedic Assistant
+- **Dual AI Engine**: Powered by ultra-fast **Groq** (`llama-3.3-70b-versatile`, `openai/gpt-oss-120b`) and **Google Gemini** (`gemini-2.5-flash`).
 - **Multilingual Support**: Auto-detects input language and responds seamlessly in English, Hindi, Hinglish, Marathi, Bengali, Tamil, Telugu, and more.
 - **Symptom & Visual Diagnosis**: Analyzes symptom descriptions and uploaded medical condition images with compassionate wellness guidance and Ayurvedic Dosha balance principles.
 - **Voice Interaction & TTS**: Integrated voice input and speech synthesis for accessibility during emergencies.
-- **Emergency Escalation**: Automatically detects life-threatening symptoms and directs users to trigger immediate SOS dispatch.
 
-### 3. 👨‍⚕️ Telehealth & Live Doctor Consultations
+### 4. 👨‍⚕️ Telehealth & Live Doctor Consultations
 - Real-time directory of verified physicians and Ayurvedic specialists.
 - Direct doctor-patient consultation requests with live bidirectional chat powered by Socket.io.
 
-### 4. 🎛️ Command Center & Fleet Management
-- **Admin Dispatch Console**: Comprehensive dashboard to monitor all incoming emergency requests, manage fleet deployments, and track response metrics.
-- **Driver / Paramedic Interface**: Real-time status toggling, incoming dispatch alerts, and navigation routes.
+### 5. 📱 Mobile Friendly & Progressive Web App (PWA)
+- Touch-optimized bottom navigation bar for one-thumb switching between portals.
+- PWA manifest (`public/manifest.json`) supporting standalone "Install App" mode on Android and iOS.
+
+---
+
+## 🔐 Default Demo Accounts
+
+| Role | Email | Password | Access Level |
+|---|---|---|---|
+| **Citizen / Patient** | `patient@swiftrescue.org` | `patient123` | SOS Dispatch, Dr. Dost AI, Doctors, Labs |
+| **Ambulance Driver** | `driver@swiftrescue.org` | `driver123` | Unit Telemetry, Status Toggle |
+| **System Admin** | `admin@swiftrescue.org` | `admin123` | Full Command Center & Fleet Grid |
+| **Medical Doctor** | `doctor@swiftrescue.org` | `doctor123` | Teleconsultation Queue & Live Chat |
 
 ---
 
@@ -47,17 +68,18 @@
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Motion (Framer Motion), Lucide Icons |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Motion, Lucide Icons |
 | **Mapping & GIS** | Leaflet, React-Leaflet, OpenStreetMap, Nominatim Geocoding, Overpass API |
 | **Backend** | Node.js, Express.js, TypeScript (`tsx`), Socket.io, Better-SQLite3 |
-| **AI & LLM** | Groq SDK (`openai/gpt-oss-120b`), Google GenAI SDK (`gemini-2.5-flash`), Web Speech API |
+| **Database** | SQLite (`rescue.db`) with tables: `users`, `ambulances`, `requests`, `doctors`, `consultations`, `live_messages` |
+| **AI & LLM** | Groq SDK (`llama-3.3-70b-versatile`, `openai/gpt-oss-120b`), Google GenAI SDK (`gemini-2.5-flash`), Web Speech API |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Local Installation & Setup
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [Node.js](https://nodejs.org/) (v18 or higher)
 - `npm` or `yarn`
 
 ### 1. Clone the Repository
@@ -72,69 +94,50 @@ npm install
 ```
 
 ### 3. Configure Environment Variables
-Create a `.env` or `.env.local` file in the root directory:
+Copy `env.example` to `.env` or `.env.local`:
 
 ```env
 # Groq API Key (High-Speed LLM Inference)
 GROQ_API_KEY="your_groq_api_key_here"
 
-# Google Gemini API Key (Optional)
+# Google Gemini API Key
 GEMINI_API_KEY="your_gemini_api_key_here"
 
-# App Port / URL
+# Application URL
 APP_URL="http://localhost:3000"
 ```
 
-### 4. Start Development Server
+### 4. Start the Application
 ```bash
+# Start full-stack dev server (Express Backend + Vite Frontend)
 npm run dev
 ```
 
-Visit **[http://localhost:3000](http://localhost:3000)** in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔌 API Reference
+## 📡 REST API & Socket.io Reference
 
-### AI Services
-- `POST /api/groq/chat` — Direct backend chat completion endpoint using Groq SDK.
-  ```json
-  {
-    "prompt": "What are natural remedies for a migraine?",
-    "model": "openai/gpt-oss-120b"
-  }
-  ```
+### REST Endpoints
+- `POST /api/auth/login` — User authentication.
+- `POST /api/auth/register` — Create user account with role (`user`, `driver`, `admin`, `doctor`).
+- `POST /api/groq/chat` — AI Chat completion with Groq LLM.
+- `GET /api/ambulances` — Fetch all active fleet units.
+- `POST /api/ambulances/toll-plazas` — Deploy ambulance units at highway toll plazas via Overpass API.
+- `GET /api/requests` — Fetch dispatch requests.
+- `GET /api/doctors` — Fetch verified doctor directory.
+- `GET /api/consultations/pending` — Fetch awaiting patient teleconsultations.
+- `GET /api/consultations/:id/messages` — Fetch chat history for consultation.
 
-### Ambulance & Dispatch
-- `GET /api/ambulances` — Fetch all ambulances with live coordinates and statuses.
-- `POST /api/ambulances` — Register or deploy a new ambulance unit by pincode.
-- `POST /api/ambulances/toll-plazas` — Scan and deploy ambulance units around highway toll booths.
-- `GET /api/requests` — List active and historical emergency dispatch requests.
-
-### Consultations & Doctors
-- `GET /api/doctors` — List available verified physicians.
-- `GET /api/consultations/pending` — List pending patient consultation requests.
-- `GET /api/consultations/:id/messages` — Fetch live chat logs for a specific consultation.
+### Socket.io Events
+- `request_ambulance` — Broadcast emergency patient coordinates to fleet dispatch.
+- `update_ambulance` — Real-time telemetry broadcast from ambulance driver units.
+- `request_consultation` — Patient requests live doctor telehealth session.
+- `accept_consultation` — Doctor accepts consultation.
+- `send_live_message` — Real-time message exchange between doctor and patient.
 
 ---
 
-## 📁 Project Structure
-
-```
-├── lib/
-│   └── utils.ts            # Utility functions (cn, clsx, tailwind-merge)
-├── App.tsx                 # Main application component & interactive views
-├── main.tsx                # React DOM entry point
-├── server.ts               # Express backend, SQLite schema, Socket.io, & Groq API
-├── index.css               # Global Tailwind CSS and Leaflet styles
-├── index.html              # HTML5 template
-├── vite.config.ts          # Vite configuration & environment variable bridges
-├── package.json            # Dependencies and npm scripts
-└── README.md               # Project documentation
-```
-
----
-
-## 🛡️ License
-
-This project is licensed under the [MIT License](LICENSE).
+## 📄 License
+MIT License. Developed for automated emergency healthcare response and smart dispatching.

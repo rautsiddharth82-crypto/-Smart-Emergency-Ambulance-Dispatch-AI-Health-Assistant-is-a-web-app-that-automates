@@ -36,6 +36,8 @@ import { cn } from './lib/utils';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { GoogleGenAI } from "@google/genai";
+import LandingPage, { UserAccount } from './LandingPage';
+import AuthModal from './AuthModal';
 // API Key Configuration (Supports both Groq and Gemini)
 const activeApiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || "";
 let genAI: any = null;
@@ -318,7 +320,7 @@ const patientIcon = new L.Icon({
 });
 
 // --- Types ---
-type View = 'patient' | 'ambulance' | 'admin' | 'doctor';
+type View = 'landing' | 'patient' | 'ambulance' | 'admin' | 'doctor';
 type Status = 'available' | 'busy' | 'offline' | 'searching' | 'assigned';
 
 interface Ambulance {
@@ -423,10 +425,22 @@ const DoctorAnimation = ({ isSpeaking }: { isSpeaking: boolean }) => {
   );
 };
 
-const Header = ({ currentView, setView }: { currentView: View, setView: (v: View) => void }) => (
+const Header = ({ 
+  currentView, 
+  setView,
+  currentUser,
+  onOpenAuth,
+  onLogout
+}: { 
+  currentView: View, 
+  setView: (v: View) => void,
+  currentUser: UserAccount | null,
+  onOpenAuth: (mode: 'login' | 'register') => void,
+  onLogout: () => void
+}) => (
   <header className="fixed top-0 left-0 right-0 z-[1000] glass border-b border-white/20 neo-shadow">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-      <div className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer" onClick={() => setView('patient')}>
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+      <div className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer" onClick={() => setView('landing')}>
         <div className="bg-gradient-to-br from-red-500 to-red-700 p-2 rounded-xl shadow-lg shadow-red-200 group-hover:scale-110 transition-transform">
           <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </div>
@@ -435,34 +449,64 @@ const Header = ({ currentView, setView }: { currentView: View, setView: (v: View
           <span className="text-[9px] sm:text-[10px] font-bold text-red-600 uppercase tracking-[0.2em] mt-0.5 sm:mt-1">Emergency Protocol</span>
         </div>
       </div>
-      <nav className="hidden md:flex bg-zinc-100/50 backdrop-blur-sm p-1.5 rounded-2xl border border-zinc-200/50">
-        {(['patient', 'ambulance', 'admin', 'doctor'] as View[]).map((v) => (
+      <nav className="hidden lg:flex bg-zinc-100/50 backdrop-blur-sm p-1 rounded-2xl border border-zinc-200/50">
+        {[
+          { id: 'landing' as View, label: 'Overview' },
+          { id: 'patient' as View, label: 'Emergency (SOS)' },
+          { id: 'ambulance' as View, label: 'Driver Unit' },
+          { id: 'doctor' as View, label: 'Doctors' },
+          { id: 'admin' as View, label: 'Command HQ' },
+        ].map((item) => (
           <button
-            key={v}
-            onClick={() => setView(v)}
+            key={item.id}
+            onClick={() => setView(item.id)}
             className={cn(
-              "px-6 py-2 rounded-xl text-xs font-bold transition-all capitalize tracking-wide",
-              currentView === v 
+              "px-4 py-1.5 rounded-xl text-xs font-bold transition-all capitalize tracking-wide",
+              currentView === item.id 
                 ? "bg-white text-zinc-900 shadow-md ring-1 ring-zinc-200/50" 
                 : "text-zinc-500 hover:text-zinc-900 hover:bg-white/50"
             )}
           >
-            {v}
+            {item.label}
           </button>
         ))}
       </nav>
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <a 
           href="tel:112"
-          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md shadow-red-200 transition-all active:scale-95"
+          className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs font-bold shadow-md shadow-red-200 transition-all active:scale-95"
         >
           <Phone className="w-3.5 h-3.5" />
           <span>112 SOS</span>
         </a>
-        <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-bold text-emerald-700 uppercase">Live</span>
-        </div>
+
+        {currentUser ? (
+          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-2xl border border-zinc-200 shadow-sm text-xs">
+            <span className="font-bold text-zinc-800 hidden sm:inline truncate max-w-[100px]">{currentUser.name.split(' ')[0]}</span>
+            <span className={cn(
+              "text-[9px] font-black uppercase px-2 py-0.5 rounded-md",
+              currentUser.role === 'admin' ? "bg-indigo-100 text-indigo-700" :
+              currentUser.role === 'driver' ? "bg-amber-100 text-amber-700" :
+              currentUser.role === 'doctor' ? "bg-blue-100 text-blue-700" :
+              "bg-red-100 text-red-700"
+            )}>
+              {currentUser.role}
+            </span>
+            <button
+              onClick={onLogout}
+              className="text-[10px] font-bold text-red-600 hover:text-red-800 ml-1"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => onOpenAuth('login')}
+            className="text-xs font-bold bg-zinc-900 text-white px-3 py-1.5 rounded-xl hover:bg-zinc-800 transition-all shadow-sm active:scale-95"
+          >
+            Sign In
+          </button>
+        )}
       </div>
     </div>
   </header>
@@ -2095,6 +2139,7 @@ const DoctorView = ({ socket }: { socket: any, key?: string }) => {
 // --- Mobile Bottom Navigation ---
 const MobileBottomNav = ({ currentView, setView }: { currentView: View, setView: (v: View) => void }) => {
   const tabs = [
+    { id: 'landing' as View, label: 'Home', icon: Activity, color: 'text-zinc-700' },
     { id: 'patient' as View, label: 'Emergency', icon: AlertCircle, color: 'text-red-600', badge: 'SOS' },
     { id: 'doctor' as View, label: 'Doctors', icon: MessageSquare, color: 'text-blue-600' },
     { id: 'ambulance' as View, label: 'Ambulance', icon: Truck, color: 'text-amber-600' },
@@ -2102,8 +2147,8 @@ const MobileBottomNav = ({ currentView, setView }: { currentView: View, setView:
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[1000] glass border-t border-zinc-200/80 mobile-bottom-nav shadow-2xl backdrop-blur-xl">
-      <div className="grid grid-cols-4 items-center px-2 py-1.5 gap-1">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[1000] glass border-t border-zinc-200/80 mobile-bottom-nav shadow-2xl backdrop-blur-xl">
+      <div className="grid grid-cols-5 items-center px-1.5 py-1 gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = currentView === tab.id;
@@ -2124,7 +2169,7 @@ const MobileBottomNav = ({ currentView, setView }: { currentView: View, setView:
               )}
             >
               <div className="relative">
-                <Icon className={cn("w-5 h-5 transition-transform", isActive ? "text-white scale-110" : tab.color)} />
+                <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5 transition-transform", isActive ? "text-white scale-110" : tab.color)} />
                 {tab.badge && !isActive && (
                   <span className="absolute -top-1.5 -right-3 bg-red-600 text-white text-[7px] font-black px-1 py-0.2 rounded-full animate-pulse shadow-sm">
                     {tab.badge}
@@ -2132,7 +2177,7 @@ const MobileBottomNav = ({ currentView, setView }: { currentView: View, setView:
                 )}
               </div>
               <span className={cn(
-                "text-[10px] font-semibold mt-1 tracking-tight leading-tight",
+                "text-[9px] sm:text-[10px] font-semibold mt-1 tracking-tight leading-tight truncate max-w-full",
                 isActive ? "text-white font-bold" : "text-zinc-600"
               )}>
                 {tab.label}
@@ -2147,7 +2192,19 @@ const MobileBottomNav = ({ currentView, setView }: { currentView: View, setView:
 
 // --- Main App ---
 export default function App() {
-  const [view, setView] = useState<View>('patient');
+  const [view, setView] = useState<View>('landing');
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    try {
+      const saved = localStorage.getItem('swiftrescue_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [authModal, setAuthModal] = useState<{ open: boolean, mode: 'login' | 'register' }>({
+    open: false,
+    mode: 'login'
+  });
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
@@ -2158,12 +2215,62 @@ export default function App() {
     };
   }, []);
 
+  const handleAuthSuccess = (user: UserAccount) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('swiftrescue_user', JSON.stringify(user));
+    } catch (e) {}
+    if (user.role === 'driver') setView('ambulance');
+    else if (user.role === 'admin') setView('admin');
+    else if (user.role === 'doctor') setView('doctor');
+    else setView('patient');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('swiftrescue_user');
+    } catch (e) {}
+    setView('landing');
+  };
+
+  const handleSelectRole = (role: 'user' | 'driver' | 'admin' | 'doctor', userAccount?: UserAccount) => {
+    if (userAccount) {
+      handleAuthSuccess(userAccount);
+    } else {
+      const demoAccount: UserAccount = {
+        id: `DEMO-${role.toUpperCase()}`,
+        name: role === 'user' ? 'Rahul Sharma (Citizen)' : role === 'driver' ? 'Amit Singh (Unit 001)' : role === 'admin' ? 'Dispatch Commander' : 'Dr. Rajesh Kumar',
+        email: `${role}@swiftrescue.org`,
+        role
+      };
+      handleAuthSuccess(demoAccount);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-red-100 selection:text-red-900 pb-20 md:pb-0">
-      <Header currentView={view} setView={setView} />
+      {view !== 'landing' && (
+        <Header 
+          currentView={view} 
+          setView={setView} 
+          currentUser={currentUser}
+          onOpenAuth={(mode) => setAuthModal({ open: true, mode })}
+          onLogout={handleLogout}
+        />
+      )}
       
-      <main className="pb-24 md:pb-20">
+      <main className={cn(view === 'landing' ? 'p-0' : 'pb-24 md:pb-20')}>
         <AnimatePresence mode="wait">
+          {view === 'landing' && (
+            <LandingPage 
+              key="landing" 
+              onSelectRole={handleSelectRole}
+              onOpenAuth={(mode) => setAuthModal({ open: true, mode })}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+            />
+          )}
           {view === 'patient' && <PatientView key="patient" socket={socket} />}
           {view === 'ambulance' && <AmbulanceView key="ambulance" socket={socket} />}
           {view === 'admin' && <AdminView key="admin" socket={socket} />}
@@ -2174,12 +2281,22 @@ export default function App() {
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav currentView={view} setView={setView} />
 
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModal.open}
+        onClose={() => setAuthModal({ open: false, mode: 'login' })}
+        mode={authModal.mode}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
       {/* Desktop Footer Branding */}
-      <footer className="hidden md:block fixed bottom-0 left-0 right-0 p-4 text-center pointer-events-none z-[1000]">
-        <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-[0.2em]">
-          SwiftRescue Protocol v1.1.0 • Prototype System
-        </p>
-      </footer>
+      {view !== 'landing' && (
+        <footer className="hidden md:block fixed bottom-0 left-0 right-0 p-4 text-center pointer-events-none z-[1000]">
+          <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-[0.2em]">
+            SwiftRescue Protocol v1.1.0 • Prototype System
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

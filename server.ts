@@ -68,6 +68,15 @@ db.exec(`
     text TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'user', -- 'user', 'driver', 'admin', 'doctor'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration for existing tables
@@ -77,6 +86,16 @@ try {
 try {
   db.prepare("ALTER TABLE consultations ADD COLUMN reason TEXT").run();
 } catch (e) {}
+
+// Seed initial users if empty
+const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
+if (userCount.count === 0) {
+  const insertUser = db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)");
+  insertUser.run("USR-001", "Rahul Sharma (Citizen)", "patient@swiftrescue.org", "patient123", "user");
+  insertUser.run("USR-002", "Amit Singh (Unit 001 Driver)", "driver@swiftrescue.org", "driver123", "driver");
+  insertUser.run("USR-003", "Dispatch Commander (HQ)", "admin@swiftrescue.org", "admin123", "admin");
+  insertUser.run("USR-004", "Dr. Rajesh Kumar (MD)", "doctor@swiftrescue.org", "doctor123", "doctor");
+}
 
 // Seed initial ambulances if empty
 const count = db.prepare("SELECT COUNT(*) as count FROM ambulances").get() as { count: number };
@@ -211,7 +230,50 @@ io.on("connection", (socket) => {
   });
 });
 
-// API Routes
+// API Routes - Authentication
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  const user = db.prepare("SELECT id, name, email, role, created_at FROM users WHERE email = ? AND password = ?").get(email, password) as any;
+  if (!user) {
+    return res.status(401).json({ error: "Invalid email or password" });
+  }
+
+  res.json({ success: true, user });
+});
+
+app.post("/api/auth/register", (req, res) => {
+  const { name, email, password, role = "user" } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password are required" });
+  }
+
+  try {
+    const id = `USR-${Date.now()}`;
+    db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)")
+      .run(id, name, email, password, role);
+    
+    res.json({
+      success: true,
+      user: { id, name, email, role, created_at: new Date().toISOString() }
+    });
+  } catch (error: any) {
+    if (error?.message?.includes("UNIQUE constraint failed")) {
+      return res.status(400).json({ error: "An account with this email already exists" });
+    }
+    res.status(500).json({ error: "Failed to create account" });
+  }
+});
+
+app.get("/api/auth/users", (req, res) => {
+  const users = db.prepare("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC").all();
+  res.json(users);
+});
+
+// API Routes - Core Dispatch & Medical
 app.get("/api/ambulances", (req, res) => {
   const ambulances = db.prepare("SELECT * FROM ambulances").all();
   res.json(ambulances);

@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Activity, 
   AlertCircle, 
@@ -17,7 +16,9 @@ import {
   Stethoscope,
   Radio,
   Zap,
-  Globe
+  Globe,
+  Download,
+  Smartphone
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from './lib/utils';
@@ -35,13 +36,15 @@ interface LandingPageProps {
   onOpenAuth: (mode: 'login' | 'register') => void;
   currentUser: UserAccount | null;
   onLogout: () => void;
+  onOpenDownloadModal?: () => void;
 }
 
 export default function LandingPage({ 
   onSelectRole, 
   onOpenAuth, 
   currentUser,
-  onLogout
+  onLogout,
+  onOpenDownloadModal
 }: LandingPageProps) {
   const DEMO_ROLES = [
     {
@@ -108,6 +111,14 @@ export default function LandingPage({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <button 
+              onClick={onOpenDownloadModal}
+              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-sm transition-all active:scale-95 border border-zinc-700"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Get APK</span>
+            </button>
+
             <a 
               href="tel:112"
               className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold shadow-md shadow-red-200 transition-all active:scale-95"
@@ -196,6 +207,14 @@ export default function LandingPage({
               <AlertCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span>Launch Emergency SOS</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button
+              onClick={onOpenDownloadModal}
+              className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-zinc-900 to-zinc-800 hover:from-zinc-800 hover:to-zinc-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-zinc-200 flex items-center gap-2.5 transition-all active:scale-95"
+            >
+              <Download className="w-5 h-5 text-emerald-400" />
+              <span>Download Android APK</span>
             </button>
 
             <button
@@ -402,6 +421,52 @@ export default function LandingPage({
             <p className="text-zinc-500 text-xs leading-relaxed">
               Patient tracks the ambulance live on Leaflet maps while receiving pre-arrival doctor telehealth guidance.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Android APK Download Card Banner */}
+      <section className="px-4 sm:px-6 max-w-7xl mx-auto my-12">
+        <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-900 text-white rounded-[2.5rem] p-8 sm:p-12 relative overflow-hidden shadow-2xl border border-zinc-800">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="space-y-4 max-w-2xl text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 bg-red-500/20 border border-red-500/30 text-red-400 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Native Android Experience</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+                Install SwiftRescue Android App (APK)
+              </h2>
+              <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
+                Enjoy 1-Click SOS home screen widgets, uninterrupted background GPS synchronization, and offline Ayurvedic symptom guidance even in areas with weak cellular reception.
+              </p>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 text-xs font-bold text-zinc-400">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>v2.4.0 (Latest Release)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>8.4 MB Lightweight Package</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>100% Virus & Malware Free</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto flex-shrink-0">
+              <button
+                onClick={onOpenDownloadModal}
+                className="px-8 py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-2.5"
+              >
+                <Download className="w-5 h-5" />
+                <span>Download APK (8.4 MB)</span>
+              </button>
+              <p className="text-[11px] text-zinc-500 text-center">Compatible with all Android 8.0+ smartphones</p>
+            </div>
           </div>
         </div>
       </section>

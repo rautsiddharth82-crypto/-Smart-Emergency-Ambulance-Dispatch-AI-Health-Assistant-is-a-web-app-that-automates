@@ -30,7 +30,9 @@ import {
   VolumeX,
   Target,
   Phone,
-  Calendar
+  Calendar,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -40,6 +42,8 @@ import { GoogleGenAI } from "@google/genai";
 import LandingPage, { UserAccount } from './LandingPage';
 import AuthModal from './AuthModal';
 import AppointmentModal, { Appointment, Doctor } from './AppointmentModal';
+import ApkDownloadModal from './ApkDownloadModal';
+import ApkRecommendationBanner from './ApkRecommendationBanner';
 
 // Groq & Gemini API Key Configuration
 export function getActiveApiKey(): string {
@@ -450,13 +454,15 @@ const Header = ({
   setView,
   currentUser,
   onOpenAuth,
-  onLogout
+  onLogout,
+  onOpenDownloadModal
 }: { 
   currentView: View, 
   setView: (v: View) => void,
   currentUser: UserAccount | null,
   onOpenAuth: (mode: 'login' | 'register') => void,
-  onLogout: () => void
+  onLogout: () => void,
+  onOpenDownloadModal?: () => void
 }) => (
   <header className="fixed top-0 left-0 right-0 z-[1000] glass border-b border-white/20 neo-shadow">
     <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
@@ -492,6 +498,14 @@ const Header = ({
         ))}
       </nav>
       <div className="flex items-center gap-2 sm:gap-3">
+        <button 
+          onClick={onOpenDownloadModal}
+          className="hidden sm:flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all active:scale-95 border border-zinc-700"
+        >
+          <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Get APK</span>
+        </button>
+
         <a 
           href="tel:112"
           className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs font-bold shadow-md shadow-red-200 transition-all active:scale-95"
@@ -2645,6 +2659,17 @@ export default function App() {
     mode: 'login'
   });
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isApkModalOpen, setIsApkModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   useEffect(() => {
     const newSocket = io();
@@ -2696,6 +2721,7 @@ export default function App() {
           currentUser={currentUser}
           onOpenAuth={(mode) => setAuthModal({ open: true, mode })}
           onLogout={handleLogout}
+          onOpenDownloadModal={() => setIsApkModalOpen(true)}
         />
       )}
       
@@ -2708,6 +2734,7 @@ export default function App() {
               onOpenAuth={(mode) => setAuthModal({ open: true, mode })}
               currentUser={currentUser}
               onLogout={handleLogout}
+              onOpenDownloadModal={() => setIsApkModalOpen(true)}
             />
           )}
           {view === 'patient' && <PatientView key="patient" socket={socket} />}
@@ -2719,6 +2746,19 @@ export default function App() {
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav currentView={view} setView={setView} />
+
+      {/* Visitor Recommendation APK Banner */}
+      <ApkRecommendationBanner
+        onOpenDownloadModal={() => setIsApkModalOpen(true)}
+        deferredPrompt={deferredPrompt}
+      />
+
+      {/* Dedicated APK Download & Installation Modal */}
+      <ApkDownloadModal
+        isOpen={isApkModalOpen}
+        onClose={() => setIsApkModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+      />
 
       {/* Auth Modal */}
       <AuthModal
